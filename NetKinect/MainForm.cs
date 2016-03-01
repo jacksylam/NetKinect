@@ -23,7 +23,7 @@ namespace NetKinect
       {
          InitializeComponent();
 
-         fileNameTextBox.Text = "h:/My Docs/GitHub/NetKinect/NetKinect/pic3.png";
+         fileNameTextBox.Text = "pic4.png";
       }
 
       public void PerformShapeDetection()
@@ -50,8 +50,12 @@ namespace NetKinect
 
             #region circle detection
             Stopwatch watch = Stopwatch.StartNew();
-            double cannyThreshold = 180.0;
+           // double cannyThreshold = 180.0;
+            double cannyThreshold = 180;
+
+            //double circleAccumulatorThreshold = 120;
             double circleAccumulatorThreshold = 120;
+
             CircleF[] circles = CvInvoke.HoughCircles(uimage, HoughType.Gradient, 2.0, 20.0, cannyThreshold, circleAccumulatorThreshold, 5);
 
             watch.Stop();
@@ -147,6 +151,7 @@ namespace NetKinect
             }
                
             triangleRectangleImageBox.Image = triangleRectangleImage;
+            triangleRectangleImageBox.Image = uimage;
             #endregion
 
             #region draw circles
