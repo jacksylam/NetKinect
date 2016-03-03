@@ -17,6 +17,9 @@ using Emgu.CV.Util;
 using Microsoft;
 using Microsoft.Kinect;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.IO;
 
 namespace NetKinect
 {
@@ -48,7 +51,7 @@ namespace NetKinect
        private DisplayFrameType currentDisplayFrameType;
        private MultiSourceFrameReader multiSourceFrameReader = null;
        private CoordinateMapper coordinateMapper = null;
-       private Bitmap bitmap = null; 
+       private WriteableBitmap bitmap = null; 
 
        //Infrared Frame 
        private ushort[] infraredFrameData = null;
@@ -96,14 +99,14 @@ namespace NetKinect
                   FrameDescription infraredFrameDescription = this.kinectSensor.InfraredFrameSource.FrameDescription;
                   this.infraredFrameData = new ushort[infraredFrameDescription.Width * infraredFrameDescription.Height];
                   this.infraredPixels = new byte[infraredFrameDescription.Width * infraredFrameDescription.Height * BytesPerPixel];
-                  this.bitmap = new Bitmap(infraredFrameDescription.Width, infraredFrameDescription.Height);
+                  this.bitmap = new WriteableBitmap(infraredFrameDescription.Width, infraredFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray32Float, null);
                   break;
               
               case DisplayFrameType.Depth:
                   FrameDescription depthFrameDescription = this.kinectSensor.DepthFrameSource.FrameDescription;
                   this.depthFrameData = new ushort[depthFrameDescription.Width * depthFrameDescription.Height];
                   this.depthPixels = new byte[depthFrameDescription.Width * depthFrameDescription.Height * BytesPerPixel];
-                  this.bitmap = new Bitmap(depthFrameDescription.Width, depthFrameDescription.Height);
+                  this.bitmap = new WriteableBitmap(depthFrameDescription.Width, depthFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray32Float, null);
                   break;
               default:
                   break;
@@ -312,9 +315,12 @@ namespace NetKinect
       }
 
       private void RenderPixelArray(byte[] pixels) {
-          pixels.CopyTo(this.bitmap.PixelBuffer);
-          this.bitmap.Invalidate();
-          this.FrameDisplayImage.Source = this.bitmap;
+          Bitmap bmp;
+          using (var ms = new MemoryStream(pixels)) {
+              bmp = new Bitmap(ms);
+          }
+         // pixels.CopyTo(this.bitmap.PixelBuffer);
+          this.circleImageBox = bmp;
       }
 
       public void PerformShapeDetection()
