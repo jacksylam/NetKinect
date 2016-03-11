@@ -135,7 +135,6 @@ namespace NetKinect
                       ShowInfraredFrame(infraredFrame, bodyFrame);
                   }
                   break;
-                  break;
               case DisplayFrameType.Depth:
                   using (depthFrame = multiSourceFrame.DepthFrameReference.AcquireFrame()) {
                       ShowDepthFrame(depthFrame);
@@ -172,7 +171,7 @@ namespace NetKinect
 
           // we got a frame, convert and render
           if (depthFrameProcessed) {
-              ConvertDepthDataToPixels(minDepth, maxDepth);
+             // ConvertDepthDataToPixels(minDepth, maxDepth);
               RenderPixelArray(this.depthPixels);
           }
       }
@@ -320,7 +319,8 @@ namespace NetKinect
               bmp = new Bitmap(ms);
           }
          // pixels.CopyTo(this.bitmap.PixelBuffer);
-          this.circleImageBox = bmp;
+          Emgu.CV.Image<Bgr,Byte> image = new Emgu.CV.Image<Bgr, Byte>(bmp);
+          this.circleImageBox.Image = image;
       }
 
       public void PerformShapeDetection()
@@ -376,7 +376,7 @@ namespace NetKinect
             Mat circleImage = new Mat(img.Size, DepthType.Cv8U, 3);
             circleImage.SetTo(new MCvScalar(0));
             foreach (CircleF circle in circles)
-               CvInvoke.Circle(circleImage, Point.Round(circle.Center), (int) circle.Radius, new Bgr(Color.Brown).MCvScalar, 2);
+               CvInvoke.Circle(circleImage, System.Drawing.Point.Round(circle.Center), (int) circle.Radius, new Bgr(System.Drawing.Color.Brown).MCvScalar, 2);
                
             circleImageBox.Image = circleImage;
             #endregion
@@ -386,7 +386,8 @@ namespace NetKinect
 
       private void textBox1_TextChanged(object sender, EventArgs e)
       {
-         PerformShapeDetection();
+         //PerformShapeDetection();
+         
       }
 
       private void loadImageButton_Click(object sender, EventArgs e)
