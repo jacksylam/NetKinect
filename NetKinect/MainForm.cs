@@ -81,7 +81,7 @@ namespace NetKinect
          this.multiSourceFrameReader = this.kinectSensor.OpenMultiSourceFrameReader(FrameSourceTypes.Infrared | FrameSourceTypes.Depth | FrameSourceTypes.BodyIndex | FrameSourceTypes.Body);
 
 
-       //  this.multiSourceFrameReader.MultiSourceFrameArrived += this.Reader_MultiSourceFrameArrived;
+         this.multiSourceFrameReader.MultiSourceFrameArrived += this.Reader_MultiSourceFrameArrived;
 
          // set IsAvailableChanged event notifier
          //this.kinectSensor.IsAvailableChanged += this.Sensor_IsAvailableChanged;
@@ -92,28 +92,8 @@ namespace NetKinect
 
       }
 
-      private void SetupCurrentDisplay(DisplayFrameType newDisplayFrameType) {
-          currentDisplayFrameType = newDisplayFrameType;
-          switch (currentDisplayFrameType) {
-              case DisplayFrameType.Infrared:
-                  FrameDescription infraredFrameDescription = this.kinectSensor.InfraredFrameSource.FrameDescription;
-                  this.infraredFrameData = new ushort[infraredFrameDescription.Width * infraredFrameDescription.Height];
-                  this.infraredPixels = new byte[infraredFrameDescription.Width * infraredFrameDescription.Height * BytesPerPixel];
-                  this.bitmap = new WriteableBitmap(infraredFrameDescription.Width, infraredFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray32Float, null);
-                  break;
-              
-              case DisplayFrameType.Depth:
-                  FrameDescription depthFrameDescription = this.kinectSensor.DepthFrameSource.FrameDescription;
-                  this.depthFrameData = new ushort[depthFrameDescription.Width * depthFrameDescription.Height];
-                  this.depthPixels = new byte[depthFrameDescription.Width * depthFrameDescription.Height * BytesPerPixel];
-                  this.bitmap = new WriteableBitmap(depthFrameDescription.Width, depthFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray32Float, null);
-                  break;
-              default:
-                  break;
-          }
-      }
 
-      private void Reader_MultiSourceFrameArrived(MultiSourceFrameReader sender, MultiSourceFrameArrivedEventArgs e) {
+      private void Reader_MultiSourceFrameArrived(object sender, MultiSourceFrameArrivedEventArgs e) {
 
           MultiSourceFrame multiSourceFrame = e.FrameReference.AcquireFrame();
 
@@ -145,6 +125,29 @@ namespace NetKinect
           }
       }
 
+
+      private void SetupCurrentDisplay(DisplayFrameType newDisplayFrameType) {
+          currentDisplayFrameType = newDisplayFrameType;
+          switch (currentDisplayFrameType) {
+              case DisplayFrameType.Infrared:
+                  FrameDescription infraredFrameDescription = this.kinectSensor.InfraredFrameSource.FrameDescription;
+                  this.infraredFrameData = new ushort[infraredFrameDescription.Width * infraredFrameDescription.Height];
+                  this.infraredPixels = new byte[infraredFrameDescription.Width * infraredFrameDescription.Height * BytesPerPixel];
+                  this.bitmap = new WriteableBitmap(infraredFrameDescription.Width, infraredFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray32Float, null);
+                  break;
+              
+              case DisplayFrameType.Depth:
+                  FrameDescription depthFrameDescription = this.kinectSensor.DepthFrameSource.FrameDescription;
+                  this.depthFrameData = new ushort[depthFrameDescription.Width * depthFrameDescription.Height];
+                  this.depthPixels = new byte[depthFrameDescription.Width * depthFrameDescription.Height * BytesPerPixel];
+                  this.bitmap = new WriteableBitmap(depthFrameDescription.Width, depthFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray32Float, null);
+                  break;
+              default:
+                  break;
+          }
+      }
+
+     
       private void ShowDepthFrame(DepthFrame depthFrame) {
           bool depthFrameProcessed = false;
           ushort minDepth = 0;
@@ -200,9 +203,14 @@ namespace NetKinect
                   infraredFrameProcessed = true;
               }
           }
+          // we got a frame, convert and render
+          if (infraredFrameProcessed) {
+              this.ConvertInfraredDataToPixels();
+              this.RenderPixelArray(this.infraredPixels);
+          }
       }
 
-      private void ConvertInfraredDataToPixels(Body[] myBodies) {
+      private void ConvertInfraredDataToPixels() {
           // Convert the infrared to RGB
           int colorPixelIndex = 0;
           for (int i = 0; i < this.infraredFrameData.Length; ++i) {
@@ -223,103 +231,19 @@ namespace NetKinect
               // 5. converting the normalized value to a byte and using the result
               // as the RGB components required by the image
               byte intensity = (byte)(intensityRatio * 255.0f);
-              if (intensity > 254) {
-                  bool isRetroReflexiveBall = false;
-                  foreach (Body body in myBodies) {
-                      //get the left and right hand joints
-                      Joint rightHand = body.Joints[JointType.HandRight];
-                      Joint leftHand = body.Joints[JointType.HandLeft];
-
-                      Joint spineMid = body.Joints[JointType.SpineMid];
-                      Joint spineBase = body.Joints[JointType.SpineBase];
-
-                      //Convert Camera space (for body) to Depth space (for Innfrared)
-                      DepthSpacePoint rightPoint = this.kinectSensor.CoordinateMapper.MapCameraPointToDepthSpace(rightHand.Position);
-                      DepthSpacePoint leftPoint = this.kinectSensor.CoordinateMapper.MapCameraPointToDepthSpace(leftHand.Position);
-                      int rightHandX = (int)rightPoint.X;
-                      int rightHandY = (int)rightPoint.Y;
-                      int leftHandX = (int)leftPoint.X;
-                      int leftHandY = (int)leftPoint.Y;
-
-                      DepthSpacePoint spineMidPoint = this.kinectSensor.CoordinateMapper.MapCameraPointToDepthSpace(spineMid.Position);
-                      int spineMidX = (int)spineMidPoint.X;
-                      int spineMidY = (int)spineMidPoint.Y;
-
-                      DepthSpacePoint spineBasePoint = this.kinectSensor.CoordinateMapper.MapCameraPointToDepthSpace(spineBase.Position);
-                      int spineBaseX = (int)spineBasePoint.X;
-                      int spineBaseY = (int)spineBasePoint.Y;
-
-
-                      int spineAverageX = (spineMidX + spineBaseX) / 2;
-                      int spineAverageY = (spineMidY + spineBaseY) / 2;
-
-                      //Find x and y from 1D array
-                      int indexX = i % infraredWidth;
-                      int indexY = i / infraredWidth;
-
-                      //range to check
-                      if (((indexX < rightHandX + 20 && indexX > rightHandX - 20) &&
-                          (indexY < rightHandY + 20 && indexY > rightHandY - 20))
-                          ||
-                          ((indexX < leftHandX + 20 && indexX > leftHandX - 20) &&
-                          (indexY < leftHandY + 20 && indexY > leftHandY - 20))) {
-                          if (indexX < spineAverageX && indexY < spineAverageY) {
-                              this.infraredPixels[colorPixelIndex++] = 0; //Blue
-                              this.infraredPixels[colorPixelIndex++] = 0; //Green
-                              this.infraredPixels[colorPixelIndex++] = intensity; //Red
-                              this.infraredPixels[colorPixelIndex++] = 255;       //Alpha
-                          }
-                          else if (indexX > spineAverageX && indexY < spineAverageY) {
-                              this.infraredPixels[colorPixelIndex++] = intensity; //Blue
-                              this.infraredPixels[colorPixelIndex++] = 0; //Green
-                              this.infraredPixels[colorPixelIndex++] = 0; //Red
-                              this.infraredPixels[colorPixelIndex++] = 255;       //Alpha
-                          }
-                          else if (indexX < spineAverageX && indexY > spineAverageY) {
-                              this.infraredPixels[colorPixelIndex++] = 0; //Blue
-                              this.infraredPixels[colorPixelIndex++] = intensity; //Green
-                              this.infraredPixels[colorPixelIndex++] = 0; //Red
-                              this.infraredPixels[colorPixelIndex++] = 255;       //Alpha
-                          }
-                          else {
-                              this.infraredPixels[colorPixelIndex++] = intensity; //Blue
-                              this.infraredPixels[colorPixelIndex++] = intensity; //Green
-                              this.infraredPixels[colorPixelIndex++] = 0; //Red
-                              this.infraredPixels[colorPixelIndex++] = 255;       //Alpha
-                          }
-
-                          isRetroReflexiveBall = true;
-                          break;
-                      }
-
-
-                  }
-
-                  //The retroreflexive is not near a hand. Probably not something we have to track.
-                  if (isRetroReflexiveBall == false) {
-                      this.infraredPixels[colorPixelIndex++] = intensity; //Blue
-                      this.infraredPixels[colorPixelIndex++] = intensity; //Green
-                      this.infraredPixels[colorPixelIndex++] = intensity; //Red
-                      this.infraredPixels[colorPixelIndex++] = 255;       //Alpha  
-                  }
-
-              }
-              else {
+              //if (intensity > 254) {
                   this.infraredPixels[colorPixelIndex++] = intensity; //Blue
                   this.infraredPixels[colorPixelIndex++] = intensity; //Green
                   this.infraredPixels[colorPixelIndex++] = intensity; //Red
                   this.infraredPixels[colorPixelIndex++] = 255;       //Alpha  
-              }
+             // }
           }
       }
 
       private void RenderPixelArray(byte[] pixels) {
-          Bitmap bmp;
-          using (var ms = new MemoryStream(pixels)) {
-              bmp = new Bitmap(ms);
-          }
-         // pixels.CopyTo(this.bitmap.PixelBuffer);
-          Emgu.CV.Image<Bgr,Byte> image = new Emgu.CV.Image<Bgr, Byte>(bmp);
+
+          Emgu.CV.Image<Bgr, Byte> image = new Emgu.CV.Image<Bgr, Byte>(infraredWidth, infraredHeight);
+          image.Bytes = pixels;
           this.circleImageBox.Image = image;
       }
 
