@@ -67,7 +67,7 @@ namespace NetKinect
       public MainForm()
       {
          InitializeComponent();
-         fileNameTextBox.Text = "balltest.png";
+        // fileNameTextBox.Text = "balltest.png";
          // one sensor is currently supported
          this.kinectSensor  = KinectSensor.GetDefault();
 
@@ -247,66 +247,66 @@ namespace NetKinect
           this.circleImageBox.Image = image;
       }
 
-      public void PerformShapeDetection()
-      {
-         if (fileNameTextBox.Text != String.Empty)
-         {
-            StringBuilder msgBuilder = new StringBuilder("Performance: ");
+     // public void PerformShapeDetection()
+      //{
+      //   if (fileNameTextBox.Text != String.Empty)
+      //   {
+      //      StringBuilder msgBuilder = new StringBuilder("Performance: ");
 
-            //Load the image from file and resize it for display
-            Image<Bgr, Byte> img = 
-               new Image<Bgr, byte>(fileNameTextBox.Text)
-               .Resize(400, 400, Emgu.CV.CvEnum.Inter.Linear, true);
+      //      //Load the image from file and resize it for display
+      //      Image<Bgr, Byte> img = 
+      //         new Image<Bgr, byte>(fileNameTextBox.Text)
+      //         .Resize(400, 400, Emgu.CV.CvEnum.Inter.Linear, true);
 
-            //Convert the image to grayscale and filter out the noise
-            UMat uimage = new UMat();
-            CvInvoke.CvtColor(img, uimage, ColorConversion.Bgr2Gray);
+      //      //Convert the image to grayscale and filter out the noise
+      //      UMat uimage = new UMat();
+      //      CvInvoke.CvtColor(img, uimage, ColorConversion.Bgr2Gray);
 
-            //use image pyr to remove noise
-            UMat pyrDown = new UMat();
-            CvInvoke.PyrDown(uimage, pyrDown);
-            CvInvoke.PyrUp(pyrDown, uimage);
+      //      //use image pyr to remove noise
+      //      UMat pyrDown = new UMat();
+      //      CvInvoke.PyrDown(uimage, pyrDown);
+      //      CvInvoke.PyrUp(pyrDown, uimage);
             
-            //Image<Gray, Byte> gray = img.Convert<Gray, Byte>().PyrDown().PyrUp();
+      //      //Image<Gray, Byte> gray = img.Convert<Gray, Byte>().PyrDown().PyrUp();
 
-            #region circle detection
-            Stopwatch watch = Stopwatch.StartNew();
-           // double cannyThreshold = 180.0;
-            double cannyThreshold = 100;
+      //      #region circle detection
+      //      Stopwatch watch = Stopwatch.StartNew();
+      //     // double cannyThreshold = 180.0;
+      //      double cannyThreshold = 100;
 
-            //double circleAccumulatorThreshold = 120;
-            double circleAccumulatorThreshold = 10;
+      //      //double circleAccumulatorThreshold = 120;
+      //      double circleAccumulatorThreshold = 10;
 
-            UMat invertImage = new UMat();
+      //      UMat invertImage = new UMat();
 
-            CvInvoke.BitwiseNot(uimage, invertImage);
-            CircleF[] circles = CvInvoke.HoughCircles(invertImage, HoughType.Gradient, 1, 5.0, cannyThreshold, circleAccumulatorThreshold, 1, 0);
+      //      CvInvoke.BitwiseNot(uimage, invertImage);
+      //      CircleF[] circles = CvInvoke.HoughCircles(invertImage, HoughType.Gradient, 1, 5.0, cannyThreshold, circleAccumulatorThreshold, 1, 0);
 
-            Debug.Print(circles.Length.ToString());
-            watch.Stop();
-            msgBuilder.Append(String.Format("Hough circles - {0} ms; ", watch.ElapsedMilliseconds));
-            msgBuilder.Append(String.Format("Number of circles: {0}", circles.Length));
-            #endregion
+      //      Debug.Print(circles.Length.ToString());
+      //      watch.Stop();
+      //      msgBuilder.Append(String.Format("Hough circles - {0} ms; ", watch.ElapsedMilliseconds));
+      //      msgBuilder.Append(String.Format("Number of circles: {0}", circles.Length));
+      //      #endregion
 
 
-            originalImageBox.Image = img;
-            this.Text = msgBuilder.ToString();
+      //      originalImageBox.Image = img;
+      //      this.Text = msgBuilder.ToString();
 
-            #region InvertImage
-            triangleRectangleImageBox.Image = invertImage;
-            #endregion
+      //      #region InvertImage
+      //      triangleRectangleImageBox.Image = invertImage;
+      //      #endregion
 
-            #region draw circles
-            Mat circleImage = new Mat(img.Size, DepthType.Cv8U, 3);
-            circleImage.SetTo(new MCvScalar(0));
-            foreach (CircleF circle in circles)
-               CvInvoke.Circle(circleImage, System.Drawing.Point.Round(circle.Center), (int) circle.Radius, new Bgr(System.Drawing.Color.Brown).MCvScalar, 2);
+      //      #region draw circles
+      //      Mat circleImage = new Mat(img.Size, DepthType.Cv8U, 3);
+      //      circleImage.SetTo(new MCvScalar(0));
+      //      foreach (CircleF circle in circles)
+      //         CvInvoke.Circle(circleImage, System.Drawing.Point.Round(circle.Center), (int) circle.Radius, new Bgr(System.Drawing.Color.Brown).MCvScalar, 2);
                
-            circleImageBox.Image = circleImage;
-            #endregion
+      //      circleImageBox.Image = circleImage;
+      //      #endregion
 
-         }
-      }
+      //   }
+      //}
 
       private void textBox1_TextChanged(object sender, EventArgs e)
       {
@@ -319,8 +319,10 @@ namespace NetKinect
          DialogResult result = openFileDialog1.ShowDialog();
          if (result == DialogResult.OK || result == DialogResult.Yes)
          {
-            fileNameTextBox.Text = openFileDialog1.FileName;
+          //  fileNameTextBox.Text = openFileDialog1.FileName;
          }
       }
+
+    
    }
 }
