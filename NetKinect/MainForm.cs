@@ -232,12 +232,18 @@ namespace NetKinect
               // 5. converting the normalized value to a byte and using the result
               // as the RGB components required by the image
               byte intensity = (byte)(intensityRatio * 255.0f);
-              //if (intensity > 254) {
+              if (intensity > 254) {
                   this.infraredPixels[colorPixelIndex++] = intensity; //Blue
                   this.infraredPixels[colorPixelIndex++] = intensity; //Green
                   this.infraredPixels[colorPixelIndex++] = intensity; //Red
                   this.infraredPixels[colorPixelIndex++] = 255;       //Alpha  
-             // }
+              }
+              else {
+                  this.infraredPixels[colorPixelIndex++] = 0; //Blue
+                  this.infraredPixels[colorPixelIndex++] = 0; //Green
+                  this.infraredPixels[colorPixelIndex++] = 0; //Red
+                  this.infraredPixels[colorPixelIndex++] = 255;       //Alpha  
+              }
           }
       }
 
@@ -245,6 +251,22 @@ namespace NetKinect
 
           Emgu.CV.Image<Rgba, Byte> image = new Emgu.CV.Image<Rgba, Byte>(infraredWidth, infraredHeight);
           image.Bytes = pixels;
+
+          UMat uimage = new UMat();
+          CvInvoke.CvtColor(image, uimage, ColorConversion.Bgr2Gray);
+
+          double cannyThreshold = 100;
+          //double circleAccumulatorThreshold = 120;
+          double circleAccumulatorThreshold = 10;
+
+          UMat invertImage = new UMat();
+          CvInvoke.BitwiseNot(uimage, invertImage);
+          CircleF[] circles = CvInvoke.HoughCircles(invertImage, HoughType.Gradient, 1, 5.0, cannyThreshold, circleAccumulatorThreshold, 1, 0);
+          foreach (CircleF circle in circles) {
+              CvInvoke.Circle(image, System.Drawing.Point.Round(circle.Center), (int)circle.Radius, new Bgr(System.Drawing.Color.Brown).MCvScalar, 2);
+          }
+
+          this.label1.Text = circles.Length.ToString();
           this.circleImageBox.Image = image;
       }
 
