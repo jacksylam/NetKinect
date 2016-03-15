@@ -133,6 +133,7 @@ namespace NetKinect
                   FrameDescription infraredFrameDescription = this.kinectSensor.InfraredFrameSource.FrameDescription;
                   this.infraredFrameData = new ushort[infraredFrameDescription.Width * infraredFrameDescription.Height];
                   this.infraredPixels = new byte[infraredFrameDescription.Width * infraredFrameDescription.Height * BytesPerPixel];
+                 // this.infraredPixels = new byte[infraredFrameDescription.Width * infraredFrameDescription.Height];
                   this.bitmap = new WriteableBitmap(infraredFrameDescription.Width, infraredFrameDescription.Height, 96.0, 96.0, PixelFormats.Gray32Float, null);
                   break;
               
@@ -242,7 +243,7 @@ namespace NetKinect
 
       private void RenderPixelArray(byte[] pixels) {
 
-          Emgu.CV.Image<Bgr, Byte> image = new Emgu.CV.Image<Bgr, Byte>(infraredWidth, infraredHeight);
+          Emgu.CV.Image<Rgba, Byte> image = new Emgu.CV.Image<Rgba, Byte>(infraredWidth, infraredHeight);
           image.Bytes = pixels;
           this.circleImageBox.Image = image;
       }
