@@ -61,8 +61,11 @@ namespace NetKinect
        private ushort[] depthFrameData = null;
        private byte[] depthPixels = null;
 
-       private int infraredWidth;
-       private int infraredHeight;
+       private int infraredWidth = 512;
+       private int infraredHeight = 424;
+
+       Emgu.CV.Image<Bgra, Byte> image = new Emgu.CV.Image<Bgra, Byte>(512, 424);
+
 
       public MainForm()
       {
@@ -249,25 +252,28 @@ namespace NetKinect
 
       private void RenderPixelArray(byte[] pixels) {
 
-          Emgu.CV.Image<Rgba, Byte> image = new Emgu.CV.Image<Rgba, Byte>(infraredWidth, infraredHeight);
+         // Emgu.CV.Image<Bgra, Byte> image =  new Emgu.CV.Image<Bgra, Byte>(infraredWidth, infraredHeight);
           image.Bytes = pixels;
 
           UMat uimage = new UMat();
-          CvInvoke.CvtColor(image, uimage, ColorConversion.Bgr2Gray);
+          CvInvoke.CvtColor(image, uimage, ColorConversion.Bgra2Gray);
 
-          double cannyThreshold = 100;
+          double cannyThreshold = 200;
           //double circleAccumulatorThreshold = 120;
+         // double circleAccumulatorThreshold = 10;
           double circleAccumulatorThreshold = 10;
 
-          UMat invertImage = new UMat();
-          CvInvoke.BitwiseNot(uimage, invertImage);
-          CircleF[] circles = CvInvoke.HoughCircles(invertImage, HoughType.Gradient, 1, 5.0, cannyThreshold, circleAccumulatorThreshold, 1, 0);
+          CvInvoke.Resize(uimage, uimage, new System.Drawing.Size(infraredWidth/2, infraredHeight/2));
+         // CvInvoke.Canny(uimage, image, 100, 200);
+          //UMat invertImage = new UMat();
+         // CvInvoke.BitwiseNot(uimage, invertImage);
+          CircleF[] circles = CvInvoke.HoughCircles(uimage, HoughType.Gradient, 1, 5, cannyThreshold, circleAccumulatorThreshold, 0, 0);
           foreach (CircleF circle in circles) {
-              CvInvoke.Circle(image, System.Drawing.Point.Round(circle.Center), (int)circle.Radius, new Bgr(System.Drawing.Color.Brown).MCvScalar, 2);
-          }
+               CvInvoke.Circle(uimage, System.Drawing.Point.Round(circle.Center), (int)circle.Radius, new Bgr(System.Drawing.Color.Brown).MCvScalar, 2);
+           }
 
           this.label1.Text = circles.Length.ToString();
-          this.circleImageBox.Image = image;
+          this.circleImageBox.Image = uimage;
       }
 
      // public void PerformShapeDetection()
